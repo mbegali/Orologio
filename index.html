@@ -1,0 +1,381 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Che ore sono? — Routine</title>
+<style>
+  :root{
+    --bg:#0a0b0b;
+    --panel:#151714;
+    --panel2:#20231c;
+    --amber:#d49343;
+    --amber2:#ffb95b;
+    --green:#6f7f52;
+    --teal:#365f5a;
+    --purple:#58445f;
+    --cream:#d8c39a;
+    --ink:#0c0d0c;
+    --muted:#887d67;
+    --danger:#9f473b;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:#050606;color:var(--cream);font-family:"Courier New",monospace;min-height:100%}
+  body{
+    background:
+      radial-gradient(circle at 70% 20%,rgba(111,78,101,.18),transparent 24%),
+      radial-gradient(circle at 20% 80%,rgba(91,83,47,.16),transparent 28%),
+      #080909;
+    image-rendering:pixelated;
+  }
+  body::before{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:99;
+    background:repeating-linear-gradient(to bottom,rgba(255,255,255,.025) 0 1px,rgba(0,0,0,.06) 1px 4px);
+    mix-blend-mode:overlay;opacity:.7;
+  }
+  .shell{
+    width:min(1180px,96vw);margin:18px auto;padding:14px;
+    border:3px solid #1f211d;background:#0c0d0c;
+    box-shadow:0 0 0 3px #050505,0 0 0 5px #33281b,0 18px 80px rgba(0,0,0,.8);
+    clip-path:polygon(2% 0,98% 0,100% 3%,100% 97%,98% 100%,2% 100%,0 97%,0 3%);
+  }
+  .topbar{
+    display:flex;justify-content:space-between;align-items:center;gap:12px;
+    border-bottom:3px solid #4a3824;background:#11130f;padding:10px 12px;margin-bottom:12px;
+  }
+  .title{font-size:clamp(20px,3vw,34px);letter-spacing:.08em;text-transform:uppercase;color:var(--amber2);text-shadow:2px 2px #392516}
+  .subtitle{font-size:12px;color:#8e836d;letter-spacing:.08em}
+  .status{font-size:12px;color:#8ca37c;border:1px solid #3c4d39;padding:6px 9px;background:#0b120c}
+
+  .layout{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(300px,.75fr);gap:14px}
+  .scene{
+    position:relative;min-height:680px;overflow:hidden;border:2px solid #3c3022;background:
+      linear-gradient(180deg,rgba(44,36,30,.8),rgba(13,14,12,.96)),
+      repeating-linear-gradient(90deg,#202319 0 36px,#171914 36px 72px);
+  }
+  .scene::before{
+    content:"";position:absolute;inset:0;
+    background:
+      linear-gradient(90deg,transparent 0 9%,rgba(0,0,0,.35) 9% 10%,transparent 10% 90%,rgba(0,0,0,.4) 90% 91%,transparent 91%),
+      linear-gradient(180deg,rgba(0,0,0,.05),rgba(0,0,0,.48));
+    pointer-events:none;
+  }
+  .window{
+    position:absolute;right:5%;top:7%;width:36%;height:30%;border:6px solid #211c16;box-shadow:0 0 0 3px #5b4026 inset;
+    background:linear-gradient(180deg,#57445d 0,#9a584d 55%,#312f3b 56%,#1c1b1f 100%);
+  }
+  .window::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent 47%,#171715 48% 52%,transparent 53%),linear-gradient(180deg,transparent 47%,#171715 48% 52%,transparent 53%);opacity:.9}
+  .lamp{position:absolute;left:11%;top:28%;width:70px;height:180px}
+  .lamp::before{content:"";position:absolute;left:18px;top:0;width:34px;height:48px;background:#cc8c39;box-shadow:0 0 28px #c67a2c;border:4px solid #50361d}
+  .lamp::after{content:"";position:absolute;left:32px;top:46px;width:6px;height:118px;background:#5c3b23;box-shadow:0 118px 0 8px #2d261c}
+  .shelf{position:absolute;left:4%;top:9%;width:43%;height:54%;border:6px solid #1a1c17;background:#171a15;box-shadow:inset 0 0 0 2px #423322}
+  .shelf::before{content:"";position:absolute;inset:7%;background:repeating-linear-gradient(to bottom,transparent 0 72px,#402f1f 73px 78px),repeating-linear-gradient(90deg,#3f4b35 0 10px,#6e4a3e 10px 18px,#2f4250 18px 27px,#6f6347 27px 39px,#171a15 39px 47px);opacity:.72}
+  .desk{position:absolute;left:6%;right:5%;bottom:5%;height:25%;background:linear-gradient(#6e431f,#452a16);border-top:6px solid #bb7130;box-shadow:0 -8px 0 #20180f inset}
+  .paper{position:absolute;width:110px;height:65px;background:#837b62;border:3px solid #312b22;bottom:12%;right:12%;transform:rotate(-4deg);opacity:.8}
+  .mug{position:absolute;width:42px;height:48px;background:#6b6b57;border:4px solid #2f2d26;bottom:13%;left:17%}.mug::after{content:"";position:absolute;right:-18px;top:8px;width:16px;height:22px;border:5px solid #3b3529;border-left:0}
+
+  .clock-panel{
+    position:absolute;left:50%;top:48%;transform:translate(-50%,-50%);width:min(520px,72vw);aspect-ratio:1/1;
+    display:grid;place-items:center;
+  }
+  .clock-bezel{position:absolute;inset:0;border:10px solid #3b3124;background:#161913;box-shadow:0 0 0 5px #6a4727,0 0 36px rgba(255,174,77,.12),inset 0 0 30px #000}
+  .clock-bezel::before{content:"";position:absolute;inset:16px;border:3px solid #806037;background:radial-gradient(circle,#171913 0 58%,#0d0e0c 100%)}
+  svg{position:relative;width:90%;height:90%;z-index:2;touch-action:none;user-select:none;image-rendering:pixelated}
+  .num{font:700 25px "Courier New",monospace;fill:#c98c44;text-anchor:middle;dominant-baseline:middle;filter:drop-shadow(2px 2px #24180e)}
+  .tick{stroke:#79613e;stroke-width:2}.tick.major{stroke:#c28b49;stroke-width:4}
+  #hourHand{stroke:#d6ad6b;stroke-width:12;stroke-linecap:square;cursor:grab;filter:drop-shadow(3px 3px #301f12)}
+  #minuteHand{stroke:#f0b55f;stroke-width:8;stroke-linecap:square;cursor:grab;filter:drop-shadow(3px 3px #301f12)}
+  .center{fill:#b4662d;stroke:#2d1e15;stroke-width:5;pointer-events:none}
+  .hand-hit{stroke:transparent;stroke-width:30;stroke-linecap:round;cursor:grab;pointer-events:stroke}
+  .hand-hit:active{cursor:grabbing}
+
+  .rightcol{display:grid;gap:12px;align-content:start}
+  .panel{border:2px solid #443725;background:#12140f;box-shadow:inset 0 0 0 2px #191b16;padding:12px}
+  .panel h2{margin:0 0 8px;font-size:14px;text-transform:uppercase;letter-spacing:.12em;color:#d29146}
+  .digital{font-size:40px;color:#8fb071;text-shadow:0 0 9px rgba(143,176,113,.35);letter-spacing:.08em;background:#091008;border:2px solid #283522;padding:10px 12px;margin-bottom:8px}
+  .phrase{font-size:22px;line-height:1.3;color:#e1c693;padding:10px;background:#1a1b15;border-left:4px solid #a36a2f;min-height:78px}
+  .alt{font-size:13px;color:#b3a58b;margin-top:8px;min-height:36px;line-height:1.5}
+  .routine{font-size:20px;color:#b5c18b;line-height:1.35;min-height:66px}.routine small{display:block;color:#857a66;font-size:12px;margin-top:6px}
+  .controls{display:grid;grid-template-columns:1fr 1fr;gap:8px}.controls button,.swap{font:700 13px "Courier New",monospace;text-transform:uppercase;letter-spacing:.06em;border:2px solid #5a482f;background:#1c1e18;color:#c5af82;padding:10px;cursor:pointer}.controls button:hover,.swap:hover{background:#2a281d;color:#ffd17e}.controls button.active{background:#5d3a20;color:#ffca70;border-color:#a56a31}
+  .swap{width:100%;margin-top:8px;background:#18211b;border-color:#3d583f;color:#9bb58d}
+  .swap:disabled{opacity:.45;cursor:not-allowed}
+  .period-note{font-size:11px;line-height:1.6;color:#a99c83;margin:11px 0 0}
+  .step-controls{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+  .step-controls button{font:700 13px "Courier New",monospace;background:#241e17;color:#e2ba79;border:2px solid #624629;padding:9px;cursor:pointer}
+  .step-controls button:hover{background:#45301d;color:#ffe0a5}
+  #hourHand,#minuteHand{touch-action:none}
+
+  .mission{font-size:13px;line-height:1.5;color:#a99c83}.mission strong{color:#d39a50}
+  .dialogue{border:2px solid #3f3325;background:#0d0f0c;padding:12px;min-height:130px}.speaker{color:#c37e39;text-transform:uppercase;font-weight:700;font-size:12px;letter-spacing:.08em;margin-bottom:8px}.dialogue p{margin:0;color:#d6c7a7;font-size:15px;line-height:1.5}
+  .kbd{display:inline-block;padding:2px 5px;border:1px solid #5a4a36;background:#1d1c17;color:#d29b55}
+  @media(max-width:850px){.layout{grid-template-columns:1fr}.scene{min-height:620px}.clock-panel{width:min(500px,86vw)}.rightcol{grid-template-columns:1fr 1fr}.rightcol .panel:last-child{grid-column:1/-1}}
+  @media(max-width:620px){.rightcol{grid-template-columns:1fr}.scene{min-height:560px}.clock-panel{top:50%;width:88vw}.shelf{width:50%}.window{width:42%}.digital{font-size:32px}}
+</style>
+</head>
+<body>
+<div class="shell">
+  <div class="topbar">
+    <div><div class="title">Che ore sono?</div><div class="subtitle">LA GIORNATA DI LUCA, GAIA E RAFFAELE // ESERCIZIO INTERATTIVO</div></div>
+    <div class="status">SYSTEM: ONLINE</div>
+  </div>
+
+  <div class="layout">
+    <section class="scene" aria-label="Scena interattiva con orologio">
+      <div class="shelf"></div><div class="window"></div><div class="lamp"></div><div class="desk"></div><div class="paper"></div><div class="mug"></div>
+      <div class="clock-panel">
+        <div class="clock-bezel"></div>
+        <svg id="clock" viewBox="0 0 420 420" aria-label="Orologio analogico interattivo">
+          <g id="ticks"></g><g id="numbers"></g>
+          <line id="hourHand" x1="210" y1="210" x2="210" y2="100"></line>
+          <line id="minuteHand" x1="210" y1="210" x2="210" y2="55"></line>
+          <line id="hourHit" class="hand-hit" x1="210" y1="210" x2="210" y2="100"></line>
+          <line id="minuteHit" class="hand-hit" x1="210" y1="210" x2="210" y2="55"></line>
+          <circle class="center" cx="210" cy="210" r="11"></circle>
+        </svg>
+      </div>
+    </section>
+
+    <aside class="rightcol">
+      <div class="panel">
+        <h2>Ora</h2>
+        <div id="digital" class="digital">07:30</div>
+        <div id="phrase" class="phrase">Sono le sette e mezza.</div>
+        <div id="alt" class="alt">Un altro modo: sono le sette e trenta.</div>
+        <button id="timeSwap" class="swap" onclick="newPhrase()">↻ cambia formulazione dell’ora</button>
+        <div class="step-controls"><button type="button" onclick="stepTime(-5)" aria-label="Cinque minuti prima">− 5 MIN</button><button type="button" onclick="stepTime(5)" aria-label="Cinque minuti dopo">+ 5 MIN</button></div>
+      </div>
+
+      <div class="panel">
+        <h2>Seleziona il periodo</h2>
+        <div class="controls">
+          <button id="amBtn" class="active" onclick="setPeriod('am')">Mattina</button>
+          <button id="pmBtn" onclick="setPeriod('pm')">Pomeriggio</button>
+        </div>
+        <p class="period-note">Mattina: 00:00–11:59 · Pomeriggio: 12:00–23:59.<br>L'orologio passa automaticamente da mezzogiorno a pomeriggio e da mezzanotte a mattina.</p>
+      </div>
+
+      <div class="panel">
+        <h2>Routine di Luca</h2>
+        <div id="routine" class="routine" aria-live="polite"></div>
+        <div id="routineAlt" class="alt">Un altro modo: ...</div>
+        <button id="routineSwap" class="swap" onclick="newRoutinePhrase()">↻ cambia la frase della routine</button>
+      </div>
+
+      <div class="dialogue">
+        <div class="speaker">ISTRUZIONI</div>
+        <p>Muovi le lancette per cambiare l'ora. Le ore e i minuti avanzano insieme, anche quando passi le 12. Di’ l’ora ad alta voce, poi descrivi che cosa fa Luca. Usa i pulsanti per variare le due frasi.</p>
+      </div>
+
+      <div class="panel mission">
+        <strong>PROVA:</strong> vai dalle <span class="kbd">11:55</span> alle <span class="kbd">12:00</span>, e dalle <span class="kbd">23:55</span> alle <span class="kbd">00:00</span>. Poi prova <span class="kbd">17:30</span> e <span class="kbd">07:45</span> e confronta i due modi di dire l’ora.
+      </div>
+    </aside>
+  </div>
+</div>
+
+<script>
+"use strict";
+// Un solo orario reale, misurato in minuti da 00:00. L'orologio è analogico (12 h),
+// ma ogni movimento attraversa correttamente le 12:00 e le 00:00.
+const cx=210,cy=210, DAY=1440;
+let minutesOfDay=7*60+30;
+let phraseIndex=0,routineIndex=0;
+let dragState=null;
+const clock=document.getElementById('clock');
+const hourHand=document.getElementById('hourHand');
+const minuteHand=document.getElementById('minuteHand');
+const hourHit=document.getElementById('hourHit');
+const minuteHit=document.getElementById('minuteHit');
+const hourWords={1:'una',2:'due',3:'tre',4:'quattro',5:'cinque',6:'sei',7:'sette',8:'otto',9:'nove',10:'dieci',11:'undici',12:'dodici'};
+const numberWords={5:'cinque',10:'dieci',15:'quindici',20:'venti',25:'venticinque',30:'trenta',35:'trentacinque',40:'quaranta',45:'quarantacinque',50:'cinquanta',55:'cinquantacinque'};
+
+const routines=[
+ {a:0,b:30,one:'Luca va a dormire',two:'Luca si prepara per andare a dormire'},
+ {a:30,b:60,one:'Luca finalmente si addormenta',two:'Finalmente Luca si addormenta'},
+ {a:60,b:390,one:'Luca dorme',two:'Luca sta dormendo'},
+ {a:390,b:420,one:'Luca si sveglia',two:'Luca apre gli occhi e si sveglia'},
+ {a:420,b:435,one:'Luca si fa la doccia',two:'Luca fa la doccia'},
+ {a:435,b:460,one:'Luca si veste di fretta',two:'Luca si prepara e si veste di fretta'},
+ {a:460,b:480,one:'Luca fa colazione con Gaia',two:'Luca e Gaia fanno colazione insieme'},
+ {a:480,b:495,one:'Luca esce di casa con Gaia',two:'Luca e Gaia escono di casa'},
+ {a:495,b:540,one:'Luca prende l’autobus per andare in università con Gaia',two:'Luca e Gaia prendono l’autobus per andare in università'},
+ {a:540,b:750,one:'Luca segue le lezioni',two:'Luca è a lezione'},
+ {a:750,b:780,one:'Luca incontra Gaia e Raffaele',two:'Luca, Gaia e Raffaele si incontrano'},
+ {a:780,b:840,one:'Luca pranza con Gaia e Raffaele',two:'Luca, Gaia e Raffaele mangiano insieme'},
+ {a:840,b:945,one:'Luca inizia a fare i compiti con Gaia',two:'Luca e Gaia iniziano a fare i compiti'},
+ {a:945,b:1020,one:'Luca finisce di studiare',two:'Luca termina lo studio'},
+ {a:1020,b:1110,one:'Luca va in palestra con Raffaele',two:'Luca e Raffaele vanno in palestra'},
+ {a:1110,b:1170,one:'Luca torna a casa con Raffaele',two:'Luca e Raffaele tornano a casa'},
+ {a:1170,b:1230,one:'Luca cucina con Gaia e Raffaele',two:'Gaia, Raffaele e Luca preparano la cena'},
+ {a:1230,b:1290,one:'Luca cena con Gaia e Raffaele',two:'Luca, Gaia e Raffaele cenano insieme'},
+ {a:1290,b:1365,one:'Luca guarda una serie con Gaia',two:'Luca e Gaia guardano una serie'},
+ {a:1365,b:1410,one:'Luca si rilassa e chiacchiera con Raffaele',two:'Luca e Raffaele chiacchierano e si rilassano'},
+ {a:1410,b:1440,one:'Luca va a dormire',two:'Luca si prepara per andare a dormire'}
+];
+
+function wrap(n){return ((n%DAY)+DAY)%DAY;}
+function setTime(n){minutesOfDay=wrap(Math.round(n/5)*5);phraseIndex=0;routineIndex=0;render();}
+function stepTime(delta){setTime(minutesOfDay+delta);}
+function setPeriod(which){
+  let pm=minutesOfDay>=720;
+  if((which==='pm'&&!pm)||(which==='am'&&pm))setTime(minutesOfDay+720);
+}
+function h24(){return Math.floor(minutesOfDay/60);}
+function mm(){return minutesOfDay%60;}
+function word(n){return numberWords[n]||String(n);}
+function hw(n){return hourWords[(n%12)||12];}
+function suffix(h){
+ if(h>=1&&h<=3)return 'di notte';
+ if(h>=4&&h<=11)return 'del mattino';
+ if(h>=13&&h<=17)return 'del pomeriggio';
+ if(h>=18&&h<=23)return 'di sera';
+ return '';
+}
+function base(h){
+ if(h===0)return 'È mezzanotte';
+ if(h===12)return 'È mezzogiorno';
+ return h%12===1?"È l'una":`Sono le ${hw(h)}`;
+}
+function punct(text){return text.endsWith('.')?text:text+'.';}
+function baseAt(h,m,variant){
+ if(m===0){
+   if(h===0)return 'È mezzanotte.';
+   if(h===12)return 'È mezzogiorno.';
+   return punct(base(h)+(variant?' in punto':'')+' '+suffix(h));
+ }
+ let words;
+ if(m===15)words=variant?'quindici':'un quarto';
+ else if(m===30)words=variant?'trenta':(h===12?'mezzo':'mezza');
+ else words=word(m);
+ if(h===0)return punct('È mezzanotte e '+words);
+ if(h===12){
+   if(variant===0)return punct('È mezzogiorno e '+words);
+   return punct('Sono le dodici e '+(m===15?'quindici':m===30?'trenta':word(m)));
+ }
+ return punct(base(h)+' e '+words+' '+suffix(h));
+}
+function beforeNext(h,m){
+ const next=(h+1)%24,r=60-m;
+ if(next===0)return punct((r===15?'Manca un quarto':'Mancano '+word(r)+' minuti')+' a mezzanotte');
+ if(next===12)return punct((r===15?'Manca un quarto':'Mancano '+word(r)+' minuti')+' a mezzogiorno');
+ return punct(base(next)+' meno '+(r===15?'un quarto':word(r))+' '+suffix(next));
+}
+function timePhrases(h,m){
+ if((h===0||h===12)&&m===0)return [baseAt(h,m,0)];
+ return [...new Set(m>30?[beforeNext(h,m),baseAt(h,m,1)]:[baseAt(h,m,0),baseAt(h,m,1)])];
+}
+function timeAdjunct(h,m,alt){
+ if(m>30&&alt===0){
+   const next=(h+1)%24,r=60-m;
+   if(next===0)return r===15?'Un quarto prima di mezzanotte':`${word(r)} minuti prima di mezzanotte`;
+   if(next===12)return r===15?'Un quarto prima di mezzogiorno':`${word(r)} minuti prima di mezzogiorno`;
+   return `${next%12===1?"All'una":'Alle '+hw(next)} meno ${r===15?'un quarto':word(r)} ${suffix(next)}`;
+ }
+ if(h===0){
+   if(m===0)return alt?'Esattamente a mezzanotte':'A mezzanotte';
+   return 'A mezzanotte e '+(m===15?(alt?'quindici':'un quarto'):m===30?(alt?'trenta':'mezza'):word(m));
+ }
+ if(h===12){
+   if(m===0)return alt?'Esattamente a mezzogiorno':'A mezzogiorno';
+   if(alt)return 'Alle dodici e '+(m===15?'quindici':m===30?'trenta':word(m));
+   return 'A mezzogiorno e '+(m===15?'un quarto':m===30?'mezzo':word(m));
+ }
+ const start=h%12===1?"All'una":'Alle '+hw(h);
+ let end='';
+ if(m===0)end=alt?' in punto':'';
+ else if(m===15)end=alt?' e quindici':' e un quarto';
+ else if(m===30)end=alt?' e trenta':' e mezza';
+ else end=' e '+word(m);
+ return `${start}${end} ${suffix(h)}`;
+}
+function routinePhrases(h,m){
+ const r=routines.find(x=>minutesOfDay>=x.a&&minutesOfDay<x.b);
+ const rawWhen=timeAdjunct(h,m,0);
+ const when1=rawWhen.charAt(0).toUpperCase()+rawWhen.slice(1);
+ const when2=timeAdjunct(h,m,1).toLowerCase();
+ return [punct(`${when1} ${r.one}`),punct(`${r.two} ${when2}`)];
+}
+function newPhrase(){phraseIndex++;render();}
+function newRoutinePhrase(){routineIndex++;render();}
+function pointFor(deg,length){const a=deg*Math.PI/180;return[cx+length*Math.sin(a),cy-length*Math.cos(a)];}
+function drawFace(){
+ const ticks=document.getElementById('ticks'),nums=document.getElementById('numbers');
+ for(let i=0;i<60;i++){
+  const a=i*6*Math.PI/180,r1=i%5===0?165:176,r2=184;
+  const coords=[cx+r1*Math.sin(a),cy-r1*Math.cos(a),cx+r2*Math.sin(a),cy-r2*Math.cos(a)];
+  const l=document.createElementNS('http://www.w3.org/2000/svg','line');
+  ['x1','y1','x2','y2'].forEach((key,j)=>l.setAttribute(key,coords[j]));
+  l.setAttribute('class',i%5===0?'tick major':'tick');ticks.appendChild(l);
+ }
+ for(let n=1;n<=12;n++){
+  const a=n*30*Math.PI/180,r=140,x=cx+r*Math.sin(a),y=cy-r*Math.cos(a);
+  const t=document.createElementNS('http://www.w3.org/2000/svg','text');
+  t.setAttribute('x',x);t.setAttribute('y',y);t.setAttribute('class','num');
+  t.textContent=n;nums.appendChild(t);
+ }
+}
+function render(){
+ const h=h24(),m=mm();
+ const [mx,my]=pointFor(m*6,154),[hx,hy]=pointFor((h%12)*30+m*.5,112);
+ minuteHand.setAttribute('x2',mx);minuteHand.setAttribute('y2',my);
+ minuteHit.setAttribute('x2',mx);minuteHit.setAttribute('y2',my);
+ hourHand.setAttribute('x2',hx);hourHand.setAttribute('y2',hy);
+ hourHit.setAttribute('x2',hx);hourHit.setAttribute('y2',hy);
+ document.getElementById('digital').textContent=`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+ const pm=h>=12;
+ ['am','pm'].forEach(p=>{
+  const button=document.getElementById(p+'Btn');const active=(p==='pm')===pm;
+  button.classList.toggle('active',active);button.setAttribute('aria-pressed',String(active));
+ });
+ const ps=timePhrases(h,m);phraseIndex%=ps.length;
+ document.getElementById('phrase').textContent=ps[phraseIndex];
+ document.getElementById('alt').textContent=ps.length>1?'Un altro modo: '+ps[(phraseIndex+1)%ps.length]:'Una sola formulazione per quest’ora.';
+ document.getElementById('timeSwap').disabled=ps.length<2;
+ const rs=routinePhrases(h,m);routineIndex%=rs.length;
+ document.getElementById('routine').textContent=rs[routineIndex];
+ document.getElementById('routineAlt').textContent='Un altro modo: '+rs[(routineIndex+1)%rs.length];
+}
+function eventAngle(evt){
+ const rect=clock.getBoundingClientRect();
+ const px=(evt.clientX-rect.left)*420/rect.width;
+ const py=(evt.clientY-rect.top)*420/rect.height;
+ let d=Math.atan2(px-cx,cy-py)*180/Math.PI;
+ return (d+360)%360;
+}
+function pointerDown(e,hand){
+ e.preventDefault();
+ dragState={hand,lastAngle:eventAngle(e),accum:0,origin:minutesOfDay};
+ clock.setPointerCapture(e.pointerId);
+}
+function pointerMove(e){
+ if(!dragState)return;
+ const a=eventAngle(e);
+ let d=a-dragState.lastAngle;
+ if(d>180)d-=360;else if(d< -180)d+=360;
+ dragState.accum+=d;dragState.lastAngle=a;
+ let target;
+ if(dragState.hand==='minute'){
+   // 6 gradi equivalgono a un minuto; un giro completo = un'ora.
+   target=dragState.origin+Math.round(dragState.accum/30)*5;
+ }else{
+   // 30 gradi equivalgono a un'ora; preserva i minuti iniziali.
+   target=dragState.origin+Math.round(dragState.accum/30)*60;
+ }
+ minutesOfDay=wrap(target);phraseIndex=0;routineIndex=0;render();
+}
+function pointerUp(e){
+ if(!dragState)return;
+ dragState=null;
+ if(clock.hasPointerCapture(e.pointerId))clock.releasePointerCapture(e.pointerId);
+}
+minuteHand.addEventListener('pointerdown',e=>pointerDown(e,'minute'));
+hourHand.addEventListener('pointerdown',e=>pointerDown(e,'hour'));
+minuteHit.addEventListener('pointerdown',e=>pointerDown(e,'minute'));
+hourHit.addEventListener('pointerdown',e=>pointerDown(e,'hour'));
+clock.addEventListener('pointermove',pointerMove);
+clock.addEventListener('pointerup',pointerUp);
+clock.addEventListener('pointercancel',pointerUp);
+drawFace();render();
+</script>
+</body>
+</html>
